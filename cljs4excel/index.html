@@ -1,0 +1,167 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <!-- <link rel="icon" href="img/favicon.ico"> -->
+
+    <title>cljs4excel: ClojureScript REPL within Microsoft Excel</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="css/grid.css" rel="stylesheet">
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="page-header">
+        <h1>ClojureScript REPL within Microsoft Excel</h1>
+        <p class="lead">Use your favorite LISP in your favorite spreadsheet app</p>
+      </div>
+
+      <p class="text-center"><img src="img/preview-1.gif"></p>
+
+      <h3>Installation</h3>
+      <p>
+        Download and save <a href="/app/latest/cljs4excel.xml">the XML manifest file</a> to a network file share. Then follow these instructions for <a href="https://msdn.microsoft.com/en-us/library/office/fp123503.aspx">how to add to Excel</a>.
+        <br/>After the mandatory Excel restart, go to Insert -> My Add-ins as shown below. Should work with Microsoft Excel 2013 and newer.
+      </p>
+
+      <p class="text-center"><img src="img/add-to-excel.png"></p>
+
+      <p>
+        Note that the manifest XML must always be placed on some network share for Excel to accept it. However, this network share can simply be a shared folder locally, as long as you stick to UNC paths (for example: \\WIN-AABBCCDDEE\Share\cljs4excel.xml). No need for any advanced external file server.
+      </p>
+
+      <h3>Interacting with Excel</h3>
+      <p>cljs4excel comes with a few utility function you can use to interact with Excel data.
+        As of now, all of these interactions are asynchronous, and will use the provided callback function to pass the result in.
+        Below is a summary of these functions:
+      </p>
+      <div class="row">
+        <div class="col-md-4">
+          <code>(get-selection fn)</code>
+          <br/>Used to get the current document selection.
+        </div>
+        <div class="col-md-4">
+          <code>(set-selection! matrix)</code>
+          <br/>Replace current document selection with given matrix data.
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-4">
+          <code>(add-binding-named-item name id fn)</code>
+          <br/>Add a named binding to a document region. The name can either refer to an existing named item in the document, or a region by using the A1 reference style. Examples of A1 references: A1 (single cell at A1), B1:C2 (2x2 at B1 to C2), Sheet1!$A$1:$B$2 (2x2 within Sheet1 on $A$1 to $B$2), etc..
+        </div>
+        <div class="col-md-4">
+          <code>(add-binding-prompt id fn)</code>
+          <br/>Add a document binding by prompting user to provide a region.
+        </div>
+        <div class="col-md-4">
+          <code>(add-binding-selection id fn)</code>
+          <br/>Add a document binding for the current selection.
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-4">
+          <code>(get-all-bindings fn)</code>
+          <br/>Call the given function with a vector of all current binding ids.
+        </div>
+        <div class="col-md-4">
+          <code>(get-binding-details id fn)</code>
+          <br/>Call the given function with the details of given binding id.
+          Multiple ids can be given as long as the final callback function can
+          handle as many arguments as ids given. The given ids can either be contained
+          within a sequence or not. Examples:
+          <br/>(get-binding-details id println)
+          <br/>(get-binding-details id1 id2 println)
+          <br/>(get-binding-details '(id1 id2) println)
+          <br/>(get-binding-details '(id1 id2) '(id3 id4) println)
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-4">
+          <code>(get-binding-data id fn)</code>
+          <br/>Pass current binding data to given function.
+          <br/>Multiple ids can be given as long as the final callback function can
+          handle as many arguments as ids given. The given ids can either be contained
+          within a sequence or not. Examples:
+          <br/>(get-binding-data id println)
+          <br/>(get-binding-data id1 id2 println)
+          <br/>(get-binding-data '(id1 id2) println)
+          <br/>(get-binding-data '(id1 id2) '(id3 id4) println)
+        </div>
+        <div class="col-md-4">
+          <code>(set-binding-data! id matrix)</code>
+          <br/>Replace binding selection with given matrix data.
+          <br/>Multiple pairs of id and matrix may be given.
+        </div>
+        <div class="col-md-4">
+          <code>(fill-binding-data! id data)</code>
+          <br/>Replace binding selection with given sequence data.
+          <br/>The sequence data is reshaped according to the binding area, and any missing
+          cells will be replaced with empty content. Multiple pairs of id and
+          sequence data my be given.
+        </div>
+        <div class="col-md-4">
+          <code>(add-binding-data-event id fn)</code>
+          <br/>Subscribe to data changes on binding id, passing it to given function whenever it is changed.
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-4">
+          <code>(remove-binding id)</code>
+          <br/>Remove an existing binding. Any data within the binding remains in sheet.
+        </div>
+        <div class="col-md-4">
+          <code>(remove-binding-data-event id)</code>
+          <br/>Unsubscribe to data changes on binding id.
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-4">
+          <code>(show-sp)</code>
+          <br/>Show scratchpad editor.
+        </div>
+        <div class="col-md-4">
+          <code>(hide-sp)</code>
+          <br/>Hide scratchpad editor.
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-4">
+          <code>(boot)</code>
+          <br/><code>(boot named-item)</code>
+          <br/>Eval the content on specified reference. The reference is either a named item or A1 style reference. If no reference is given the current selection is used.
+        </div>
+      </div>
+
+      <h3>Examples</h3>
+      <p>Example use cases can be found on <a href="https://github.com/cfelde/cljs4excel/blob/master/examples/EXAMPLES.md">github.com/cfelde/cljs4excel/blob/master/examples/EXAMPLES.md</a>.</p>
+
+      <h3>GitHub</h3>
+      <p>All the code can be found on <a href="https://github.com/cfelde/cljs4excel">github.com/cfelde/cljs4excel</a>. Feedback, bug fixes, feature requests, and pull requests are all welcome.</p>
+    </div> <!-- /container -->
+
+    <footer class="footer">
+      <div class="container">
+        <p class="text-muted">Copyright © 2015 Christian Felde and Contributors</p>
+      </div>
+    </footer>
+    <!-- IE10 viewport hack for Surface/desktop Windows 8 bug -->
+    <script src="js/ie10-viewport-bug-workaround.js"></script>
+  </body>
+</html>
